@@ -173,6 +173,8 @@ public class ObjectGrabber : MonoBehaviour
             //class means script, not a variable 
             InteractableObject interactable = hit.collider.GetComponent<InteractableObject>();
             if (interactable != null)
+
+            if(currentHighlight != null && currentHighlight != interactable)
             {
                 currentHighlight.Unhighlight();
                 Debug.Log("unhiglighted");
