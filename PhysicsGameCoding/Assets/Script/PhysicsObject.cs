@@ -30,7 +30,7 @@ public class PhysicsObject : MonoBehaviour
 
     Rigidbody rb;
     PhysicsMaterial physMat;
-    public bool isHeld;
+    public bool isHeld = false;
 
 
     void Awake()
@@ -71,8 +71,18 @@ public class PhysicsObject : MonoBehaviour
             col.material = physMat;
 
         }
-
-
-
     }
+
+    //preview in editor 
+    //when you change values in the inspector during play mode 
+    //this makes it apply immediately without restarting 
+
+
+    private void OnValidate()
+    {
+        //on validate runs in the editor whenever an inspector value changes 
+        if(rb != null) ApplyRigidbodySettings();
+    }
+
+
 }
