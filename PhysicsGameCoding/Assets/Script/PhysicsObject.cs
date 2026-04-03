@@ -3,6 +3,8 @@ using UnityEngine;
 public class PhysicsObject : MonoBehaviour
 {
     // Start is called once before the first execution of Update after the MonoBehaviour is created
+
+    [Header("Mass and Motion")]
     //how heavy the object is in KG affects how much force is needed to moving 
     [Range(0.1f, 100f)]
     public float mass = 1f;
@@ -36,7 +38,8 @@ public class PhysicsObject : MonoBehaviour
     void Awake()
     {
         rb = GetComponent<Rigidbody>();
-        //call our function here 
+        ApplyRigidbodySettings();
+        ApplySurfaceSettings();
     }
     //sets mass and drag directly 
     void ApplyRigidbodySettings()

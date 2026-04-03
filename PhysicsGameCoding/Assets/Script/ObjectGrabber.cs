@@ -4,6 +4,7 @@ using UnityEngine.InputSystem;
 
 public class ObjectGrabber : MonoBehaviour
 {
+    [Header("Grab Settings")]
     [Tooltip("how far away the player can grab objects from")]
     public float grabRange = 4;
 
@@ -17,18 +18,17 @@ public class ObjectGrabber : MonoBehaviour
     public float throwForce = 15f;
 
     private Rigidbody heldObject;
+    //the rigidbody that we are currently holding 
     private bool isHolding = false;
+    //are we currently holding something?
 
     private InteractableObject currentHighlight;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void FixedUpdate()
-    {
-        //fixed update runs on an interval schedule 
-        //we move the held object here so it stays smooth and physics it accurate 
-
-        if (isHolding && heldObject != null) MoveHeldObject();
-    }
+   
+    
+    
+  
 
     // Update is called once per frame
     void Update()
@@ -38,13 +38,22 @@ public class ObjectGrabber : MonoBehaviour
         UpdateHighlight();
     }
 
+
+    private void FixedUpdate()
+    {
+        //fixed update runs in sync with the physics engine 
+        //we move the held objecthere so it stays smooth and physics accurate
+        if (isHolding && heldObject != null) MoveHeldObject ();
+    }
+
+
     void TryGrab()
     {
         Ray ray = new Ray(transform.position, transform.forward);
         RaycastHit hit;
 
         //drawing the ray for debugging 
-        Debug.DrawRay(transform.position, transform.forward * grabRange, Color.yellow, 0.5f);
+        //Debug.DrawRay(transform.position, transform.forward * grabRange, Color.yellow, 0.5f);
 
         if (Physics.Raycast(ray, out hit, grabRange))
         {
@@ -55,6 +64,11 @@ public class ObjectGrabber : MonoBehaviour
             {
                 //get rigidbody so we can move it with physics 
                 heldObject = hit.collider.GetComponent<Rigidbody>();
+
+                //added this later 
+                PhysicsObject physObj = heldObject.GetComponent<PhysicsObject>();
+                if (physObj != null) physObj.isHeld = true;
+
                 if (heldObject != null)
                 {
 
@@ -68,16 +82,14 @@ public class ObjectGrabber : MonoBehaviour
                     heldObject.linearVelocity = Vector3.zero;
                     heldObject.angularVelocity = Vector3.zero;
 
-                  
-                    
-                    
-                    //unhighlight function here!!!!!!!! IMPORTANT 
 
-
-
+                    //unhighlight when grabbed: object is now in hand 
+                    interactable.Unhighlight();
+                    currentHighlight = null;
 
                     isHolding = true; 
-                    Debug.Log($"Grabbed {heldObject.name}");
+
+                   
                 }
 
 
@@ -90,6 +102,7 @@ public class ObjectGrabber : MonoBehaviour
     }
 
     //update: runs every frame | fixed update runs at scheduled intervals 
+    //smoothly moves the rigidbody toward the hold point 
 
     void MoveHeldObject()
     {
@@ -113,13 +126,22 @@ public class ObjectGrabber : MonoBehaviour
     {
         if (heldObject == null) return; //if we arent holding anything, exit the function
 
+        //mark no longer as held 
+        PhysicsObject phycsObj = heldObject.GetComponent<PhysicsObject>();
+        if (phycsObj != null) phycsObj.isHeld = false;
+
+
         //re-enable gravity and rotation
         heldObject.useGravity = true;
         heldObject.freezeRotation = false;
 
+        //zero velocity so it doesnt launch away on drop 
+        heldObject.linearVelocity = Vector3.zero;
+        heldObject.linearVelocity = Vector3.zero;
+
         heldObject = null; //clearing it 
         isHolding = false;
-        Debug.Log("Dropped object");
+        
 
     }
     //release the obj and launches it forward using address
@@ -127,6 +149,12 @@ public class ObjectGrabber : MonoBehaviour
     void ThrowObject()
     {
         if (heldObject == null) return;
+
+        //mark no longer as held 
+        PhysicsObject physObj = heldObject.GetComponent<PhysicsObject>();
+        if (physObj != null) physObj.isHeld = false;
+
+
 
         //re-enable physics 
         heldObject.useGravity = true; 
@@ -139,7 +167,7 @@ public class ObjectGrabber : MonoBehaviour
 
         heldObject = null;
         isHolding = false;
-        Debug.Log("Threw Object");
+        //Debug.Log("Threw Object");
 
 
 
@@ -147,13 +175,27 @@ public class ObjectGrabber : MonoBehaviour
 
     public void OnGrabPerformed(InputAction.CallbackContext context)
     {
-        if (isHolding) DropObject();
-        else TryGrab();
+       
+        if(!context.performed) return;
+        if (isHolding)
+        {
+            DropObject();
 
+        }
+        else
+        {
+            TryGrab();
+        }
     }
 
     public void OnThrowPerformed(InputAction.CallbackContext context)
     { 
+       
+        if((!context.performed))
+        {
+            return;
+
+        }
         if(isHolding) ThrowObject();
 
     }
@@ -166,36 +208,38 @@ public class ObjectGrabber : MonoBehaviour
 
         Ray ray = new Ray(transform.position, transform.forward);
         RaycastHit hit;
-        Debug.DrawRay(transform.position, transform.forward * grabRange, Color.red); 
 
-        if(Physics.Raycast(ray, out hit, grabRange))
+        //draw the detection ray in scene view (editor only)
+        Debug.DrawRay(transform.position, transform.forward * grabRange, Color.red);
+
+        if (Physics.Raycast(ray, out hit, grabRange))
         {
             //class means script, not a variable 
             InteractableObject interactable = hit.collider.GetComponent<InteractableObject>();
             if (interactable != null)
-
-            if(currentHighlight != null && currentHighlight != interactable)
             {
-                currentHighlight.Unhighlight();
-                Debug.Log("unhiglighted");
+                if (currentHighlight != null && currentHighlight != interactable)
+                {
+                    currentHighlight.Unhighlight();
+                    Debug.Log("unhiglighted");
+                }
+
+                //highlight the new obj 
+                interactable.Highlight();
+                Debug.Log("call highlight");
+                currentHighlight = interactable;
+                return;
+
             }
 
-            //highlight the new obj 
-            interactable.Highlight();
-            Debug.Log("call highlight");
-            currentHighlight = interactable;
-            return; 
+            //raycast hits nothing interactable clear highlight 
+            if (currentHighlight != null)
+            {
+                currentHighlight.Unhighlight();
+                currentHighlight = null;
 
+            }
         }
-
-        //raycast hits nothing interactable clear highlight 
-        if(currentHighlight != null)
-        {
-            currentHighlight.Unhighlight();
-            currentHighlight = null; 
-
-        }
-
     }
 
 
