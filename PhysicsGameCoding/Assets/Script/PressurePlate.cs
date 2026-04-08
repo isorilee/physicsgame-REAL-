@@ -1,6 +1,4 @@
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
-using UnityEditor.Build;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -53,7 +51,8 @@ public class PressurePlate : MonoBehaviour
 
     }
 
-
+    //fires when any collider enters the trigeer zone 
+    //we check for physics obj to get the weight private void OnTriggerEnter(Collider other)
     private void OnTriggerEnter(Collider other)
     {
         PhysicsObject physOb = other.GetComponent<PhysicsObject>();
@@ -63,14 +62,26 @@ public class PressurePlate : MonoBehaviour
         if (physOb.isHeld) return; //so it doesnt go off when youre just holding it in the trigger area 
 
         //first simple version 
-        currentWeight += physOb.puzzleWeight;
-        Debug.Log($"{other.gameObject.name} entered plate. total weight: {currentWeight}");
+        //currentWeight += physOb.puzzleWeight;
+        //Debug.Log($"{other.gameObject.name} entered plate. total weight: {currentWeight}");
 
+        //the first ver had numbers keep being added on top 
+        if (objectsOnPlate.Add(physOb))
+        {
+            if (objectsOnPlate.Add(physOb))
+            {
+                currentWeight += physOb.puzzleWeight;
+                CheckActivation();
+
+            }
+
+
+        }
 
     }
 
 
-    private void nTriggerStay(Collider other)
+    private void OnTriggerStay(Collider other)
     {
         PhysicsObject physicobj = other.GetComponent<PhysicsObject>();
         if (physicobj == null) return;
@@ -107,7 +118,7 @@ public class PressurePlate : MonoBehaviour
     //called whenever weight changes, activates if threshold is met 
     void CheckActivation()
         {
-            if (!isActivated && currentWeight < weightThreshold)
+            if (!isActivated && currentWeight >= weightThreshold)
             {
                 isActivated = true; 
                 if(lockOnActivate) isLocked = true;
@@ -119,7 +130,7 @@ public class PressurePlate : MonoBehaviour
                 if(plate != null)
                 {
                     //after its activated move the plate 
-                    plate.localPosition = plateResetPos;
+                    plate.localPosition = platePressedPos;
 
                 }
 
