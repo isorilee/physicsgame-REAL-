@@ -30,7 +30,7 @@ public class SpinAttack : MonoBehaviour
         // using FixedUpdate because this is all physics-based
         // (forces and torque should be applied here instead of Update)
 
-        if (Input.GetKey(KeyCode.S))
+        if (Input.GetKey(KeyCode.Q))
         {
             // apply torque so the player actually spins using physics
             //  better than transform.Rotate because it interacts with collisions

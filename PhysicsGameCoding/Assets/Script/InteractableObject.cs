@@ -1,66 +1,97 @@
-using UnityEngine;
+﻿using UnityEngine;
+using System.Collections;
 
 public class InteractableObject : MonoBehaviour
 {
-    //the color of object glows when the player looks at it 
-    public Color highlightColor = new Color(r: 1f, g: 0.95f, b: 0.6f);
-    //how strong the highlight color blends with the original color 0= no effect 1=full replace 
-    [Range(0, 1f)] public float highlightStrength = 0.4f;
+    [Header("Highlight")]
+    public Color highlightColor = Color.yellow;
+    [Range(0f, 1f)] public float highlightStrength = 0.5f;
 
-    private Renderer objectRenderer; //the render comp on this obj 
-    private Color originalColor; //the color before any highlight was applied 
-    private bool isHighlighted = false; //are we currently highlighted? 
+    [Header("Interaction Type")]
+    public bool isDrink = false;
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
+    [Header("Drink Settings")]
+    public float drinkDelay = 0.75f;
+    public GameObject objectToHideAfterUse;
+
+    private Renderer objectRenderer;
+    private Color originalColor;
+    private bool isHighlighted = false;
+    private bool hasBeenUsed = false;
+
     void Awake()
     {
-        objectRenderer = GetComponent<Renderer>(); //cache the renderer so we are not calling every frame 
+        objectRenderer = GetComponentInChildren<Renderer>();
+
         if (objectRenderer != null)
         {
-            //store the original color so we can restore it after unhighlighting 
-            //we read from the materials color property 
-            //we use sharedmaterial to read the base color without instancing 
-
             originalColor = objectRenderer.material.color;
         }
-
         else
         {
-            Debug.Log($"InteractableObject object on {gameObject.name} has no renderer, highlighter won't work");
-
+            Debug.LogWarning(gameObject.name + " has no renderer for highlight.");
         }
-
     }
 
-    // Update is called once per frame
     public void Highlight()
     {
-        if (isHighlighted || objectRenderer == null)
-        {
-            Debug.Log("no obj renderer & ishighlighted is true");
-            return; 
-        }
-
-        //color.lerp blends bent the original color and the highlighted color 
-        //by the highlight strength amt 
-        //we use material not shared material to create a uniqye instance here 
-        //so we dont effect every obj using the same material 
+        if (isHighlighted || objectRenderer == null) return;
 
         objectRenderer.material.color = Color.Lerp(originalColor, highlightColor, highlightStrength);
         isHighlighted = true;
     }
-    //called by object grabber when the player looks away
-    //restores original color 
 
     public void Unhighlight()
     {
-        if (!isHighlighted || objectRenderer == null) return; 
+        if (!isHighlighted || objectRenderer == null) return;
+
         objectRenderer.material.color = originalColor;
         isHighlighted = false;
-
-
     }
 
+    public void Interact()
+    {
+        Debug.Log("Interact called on: " + gameObject.name);
 
+        if (hasBeenUsed) return;
 
+        if (isDrink)
+        {
+            StartCoroutine(DrinkSequence());
+        }
+        else
+        {
+            Debug.Log("Interacted with " + gameObject.name + ", but it is not marked as a drink.");
+        }
+    }
+
+    private IEnumerator DrinkSequence()
+    {
+        hasBeenUsed = true;
+
+        Debug.Log("Drinking...");
+
+        yield return new WaitForSeconds(drinkDelay);
+
+        if (DrunkManager.instance != null)
+        {
+            DrunkManager.instance.StartDrunkMode();
+            Debug.Log("Player is now drunk.");
+        }
+        else
+        {
+            Debug.LogError("No DrunkManager found in scene.");
+        }
+
+        Unhighlight();
+
+        if (objectToHideAfterUse != null)
+        {
+            objectToHideAfterUse.SetActive(false);
+        }
+        else
+        {
+            gameObject.SetActive(false);
+        }
+    }
 }
