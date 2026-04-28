@@ -137,6 +137,8 @@ public class FPSplayer : MonoBehaviour
         ClearCurrentInteractable();
     }
 
+  
+
     void ShowPrompt(InteractableObject interactable)
     {
         if (interactPrompt != null)
