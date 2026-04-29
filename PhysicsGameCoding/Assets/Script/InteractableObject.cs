@@ -57,7 +57,7 @@ public class InteractableObject : MonoBehaviour
 
         if (isDrink)
         {
-            StartCoroutine(DrinkSequence());
+            //StartCoroutine(DrinkSequence());
         }
         else
         {
@@ -75,7 +75,7 @@ public class InteractableObject : MonoBehaviour
 
         if (DrunkManager.instance != null)
         {
-            DrunkManager.instance.StartDrunkMode();
+            //DrunkManager.instance.StartDrunkMode();
             Debug.Log("Player is now drunk.");
         }
         else
@@ -95,3 +95,4 @@ public class InteractableObject : MonoBehaviour
         }
     }
 }
+

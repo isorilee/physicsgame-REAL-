@@ -21,7 +21,7 @@ public class RandomPhysicsBurst : MonoBehaviour
         {
             yield return new WaitForSeconds(Random.Range(minTime, maxTime));
 
-            if (DrunkManager.instance != null && DrunkManager.instance.isDrunk && physicsObjects.Count > 0)
+            //if (DrunkManager.instance != null && DrunkManager.instance.isDrunk && physicsObjects.Count > 0)
             {
                 Rigidbody rb = physicsObjects[Random.Range(0, physicsObjects.Count)];
                 if (rb != null)

@@ -11,13 +11,13 @@ public class DrunkSlip : MonoBehaviour
         if (rb == null) rb = GetComponent<Rigidbody>();
     }
 
-    void FixedUpdate()
-    {
-        if (DrunkManager.instance == null || !DrunkManager.instance.isDrunk || rb == null) return;
+    //void FixedUpdate()
+    //{
+    //    if (DrunkManager.instance == null || !DrunkManager.instance.isDrunk || rb == null) return;
 
-        float level = DrunkManager.instance.drunkLevel;
-        float sideSlip = Mathf.Sin(Time.time * slipSpeed) * slipForce * level;
+    //    float level = DrunkManager.instance.drunkLevel;
+    //    float sideSlip = Mathf.Sin(Time.time * slipSpeed) * slipForce * level;
 
-        rb.AddForce(transform.right * sideSlip, ForceMode.Force);
-    }
+    //    rb.AddForce(transform.right * sideSlip, ForceMode.Force);
+    //}
 }

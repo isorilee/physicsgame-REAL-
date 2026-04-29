@@ -2,41 +2,41 @@ using UnityEngine;
 
 public class DrunkManager : MonoBehaviour
 {
+    
     public static DrunkManager instance;
-
+    
+    [Header("Drunk State")]
     public bool isDrunk = false;
+
+    //0=sober,1=verydrunk
+    [Range(0f, 1f)]
     public float drunkLevel = 0f;
 
-    [Header("Drunk Progression")]
-    public float maxDrunkLevel = 5f;
-    public float increaseRate = 0.2f;
-
-    private void Awake()
+     void Awake()
     {
-        if (instance == null)
+        if(instance == null)
         {
             instance = this;
         }
+
         else
         {
+            //prevent duplicate DrunkManagers in the scene 
             Destroy(gameObject);
         }
     }
 
-    private void Update()
-    {
-        if (isDrunk)
-        {
-            drunkLevel += increaseRate * Time.deltaTime;
-            drunkLevel = Mathf.Clamp(drunkLevel, 1f, maxDrunkLevel);
-        }
-    }
 
-    public void StartDrunkMode()
+    public void SetDrunk(float level)
     {
         isDrunk = true;
-        drunkLevel = 1f;
+        drunkLevel = Mathf.Clamp01(level);
+    }
 
-        Debug.Log("Drunk mode started.");
+    public void SetSober()
+    {
+        isDrunk = false;
+        drunkLevel = 0f;
+
     }
 }

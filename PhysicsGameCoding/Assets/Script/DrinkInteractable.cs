@@ -72,9 +72,9 @@ public class DrinkInteractable : MonoBehaviour
 
         yield return new WaitForSeconds(drinkDelay);
 
-        if (DrunkManager.instance != null)
+        //if (DrunkManager.instance != null)
         {
-            DrunkManager.instance.StartDrunkMode();
+            //DrunkManager.instance.StartDrunkMode();
         }
 
         if (drinkVisual != null)

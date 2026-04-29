@@ -20,7 +20,7 @@ public class RandomCameraFlip : MonoBehaviour
         {
             yield return new WaitForSeconds(Random.Range(minTimeBetweenFlips, maxTimeBetweenFlips));
 
-            if (DrunkManager.instance != null && DrunkManager.instance.isDrunk && !isFlipping)
+            //if (DrunkManager.instance != null && DrunkManager.instance.isDrunk && !isFlipping)
             {
                 yield return StartCoroutine(DoFlip());
             }
