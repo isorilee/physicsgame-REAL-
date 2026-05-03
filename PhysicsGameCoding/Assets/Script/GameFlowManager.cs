@@ -85,30 +85,34 @@ public class GameFlowManager : MonoBehaviour
             case GameState.BarIntro:
                 SwitchToFirstPerson();
 
-                drunkManager.SetSober();
-                missionUI.SetMissionText("pour yourself a drink.");
+                //drunkManager.SetSober();
+                DrunkManager.instance.SetDrunkState(DrunkManager.DrunkState.Sober);
+                missionUI.SetMissionText("pour yourself a drink");
                 Debug.Log("state: Bar Intro");
                 break;
 
                 case GameState.PaymentMission:
                 SwitchToThirdPerson();
 
-                drunkManager.SetDrunk(0.35f);
+                //drunkManager.SetDrunk(0.35f);
+                DrunkManager.instance.SetDrunkState(DrunkManager.DrunkState.Tipsy);
                 missionUI.SetMissionText("pay the bill");
                 Debug.Log("Friend NPC: should we get the check?");
                 break;
 
                 case GameState.MirrorMission:
                 SwitchToThirdPerson();
-                drunkManager.SetDrunk(0.6f);
+                //drunkManager.SetDrunk(0.6f);
+                DrunkManager.instance.SetDrunkState(DrunkManager.DrunkState.Drunk);
                 missionUI.SetMissionText("make yourself presentable");
                 Debug.Log("you look... horrible");
                 break;
 
                 case GameState.BathroomMission:
                 SwitchToThirdPerson();
-                drunkManager.SetDrunk(0.9f);
-                missionUI.SetMissionText("Find the bathroom");
+                //drunkManager.SetDrunk(0.9f);
+                DrunkManager.instance.SetDrunkState(DrunkManager.DrunkState.Wasted);
+                missionUI.SetMissionText("find the bathroom");
                 Debug.Log("You don't have an extra pair of pants...");
                 break;
         }

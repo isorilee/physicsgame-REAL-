@@ -45,6 +45,9 @@ public class FPSplayer : MonoBehaviour
     {
         rb = GetComponent<Rigidbody>();
 
+        //falling problem 
+        //rb.freezeRotation = true;
+
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
 
@@ -67,6 +70,8 @@ public class FPSplayer : MonoBehaviour
 
         Vector2 finalMoveInput = moveInput;
 
+        //drunk input
+
         if (DrunkManager.instance != null && DrunkManager.instance.isDrunk && useDrunkInput)
         {
             float drunkLevel = DrunkManager.instance.drunkLevel;
@@ -75,6 +80,9 @@ public class FPSplayer : MonoBehaviour
             float wobbleY = Mathf.Cos(Time.time * drunkInputSpeed * 1.3f) * drunkInputAmount * drunkLevel;
 
             finalMoveInput += new Vector2(wobbleX, wobbleY);
+
+
+
             finalMoveInput = Vector2.ClampMagnitude(finalMoveInput, 1.4f);
         }
 
