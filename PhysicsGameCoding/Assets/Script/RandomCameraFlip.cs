@@ -8,7 +8,6 @@ public class RandomCameraFlip : MonoBehaviour
     public float flipDuration = 2.5f;
 
     private bool isFlipping = false;
-
     void Start()
     {
         StartCoroutine(FlipRoutine());

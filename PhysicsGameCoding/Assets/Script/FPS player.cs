@@ -78,6 +78,9 @@ public class FPSplayer : MonoBehaviour
 
             float wobbleX = Mathf.Sin(Time.time * drunkInputSpeed) * drunkInputAmount * drunkLevel;
             float wobbleY = Mathf.Cos(Time.time * drunkInputSpeed * 1.3f) * drunkInputAmount * drunkLevel;
+            float wobbleZ = Mathf.Abs(Time.time * drunkInputSpeed * 1.2f) * drunkInputAmount * drunkLevel;
+
+            Debug.Log("Camera is wobbling");
 
             finalMoveInput += new Vector2(wobbleX, wobbleY);
 
@@ -102,14 +105,19 @@ public class FPSplayer : MonoBehaviour
     {
         if (cameraTransform == null) return;
 
-        float mouseX = lookInput.x * lookSensitivity * Time.deltaTime;
+       
         float mouseY = lookInput.y * lookSensitivity * Time.deltaTime;
+        float mouseX = lookInput.x * lookSensitivity * Time.deltaTime; 
 
         yaw += mouseX;
         transform.rotation = Quaternion.Euler(0f, yaw, 0f);
 
         pitch -= mouseY;
         pitch = Mathf.Clamp(pitch, -90f, 90f);
+
+
+
+
 
         cameraTransform.localRotation = Quaternion.Euler(pitch, 0f, 0f);
     }
@@ -249,6 +257,12 @@ public class FPSplayer : MonoBehaviour
         {
             Gizmos.color = Color.green;
             Gizmos.DrawLine(cameraTransform.position, cameraTransform.position + cameraTransform.forward * interactDistance);
+
+
+
+
+
+
         }
     }
 }

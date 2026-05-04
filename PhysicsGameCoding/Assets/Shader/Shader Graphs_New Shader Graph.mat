@@ -39,7 +39,7 @@ Material:
     m_Floats:
     - _Blend: 1
     - _NoiseScale: 10
-    - _distortionStrength: 0.25
+    - _distortionStrength: 0
     m_Colors: []
   m_BuildTextureStacks: []
   m_AllowLocking: 1
