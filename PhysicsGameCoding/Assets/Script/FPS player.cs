@@ -1,5 +1,7 @@
+﻿using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.UI;
 using TMPro;
 
 public class FPSplayer : MonoBehaviour
@@ -10,6 +12,19 @@ public class FPSplayer : MonoBehaviour
     public float jumpForce = 5f;
     private bool isRunning;
     private bool jumpReady;
+
+    [Header("Ragdoll Movement Target")]
+    public Rigidbody ragdollHips;
+
+    [Header("Anti-Flying")]
+    public float groundedStickForce = 20f;
+    public float maxHorizontalSpeed = 10f;
+    public float maxVerticalSpeed = 12f;
+
+    [Header("Controlled Tipping")]
+    public bool allowTipping = true;
+    public float angularDamping = 8f;
+    public float maxAngularVelocity = 3f;
 
     [Header("Drunk Movement")]
     public bool useDrunkInput = true;
@@ -22,6 +37,23 @@ public class FPSplayer : MonoBehaviour
     private float yaw;
     private float pitch;
 
+    [Header("Intro Camera")]
+    public float introLookDelay = 2f;
+
+    [Header("Drink Sequence")]
+    public bool canMove = false;
+    public bool canLook = false;
+
+    public GameObject firstPersonCine;
+    public GameObject thirdPersonCine;
+
+    [Header("Animation")]
+    public Animator characterAnimator;
+    public string walkingBoolName = "IsWalking";
+
+    public float delayBeforeCameraSwitch = 1.5f;
+    public float delayBeforeMovementUnlock = 1.5f;
+
     [Header("Grounding")]
     public LayerMask groundLayer;
     public float groundCheckRadius = 0.5f;
@@ -30,47 +62,112 @@ public class FPSplayer : MonoBehaviour
     public Transform groundCheck;
 
     [Header("Interaction")]
-    public float interactDistance = 3f;
+    public float interactDistance = 8f;
     private InteractableObject currentInteractable;
 
     [Header("UI Prompt")]
     public GameObject interactPrompt;
     public TextMeshProUGUI promptText;
 
+    [Header("Reticle")]
+    public Image reticleImage;
+    public Color normalReticleColor = Color.white;
+    public Color interactReticleColor = Color.yellow;
+
     private Rigidbody rb;
     private Vector2 moveInput;
     private Vector2 lookInput;
+    private bool hasStartedDrinkSequence = false;
 
     void Start()
     {
         rb = GetComponent<Rigidbody>();
 
-        //falling problem 
-        //rb.freezeRotation = true;
+        if (rb == null)
+        {
+            Debug.LogError("FPSplayer needs a Rigidbody on the Player object.");
+            enabled = false;
+            return;
+        }
+
+        if (ragdollHips == null)
+        {
+            Debug.LogWarning("Ragdoll Hips is not assigned on FPSplayer.");
+        }
+
+        rb.freezeRotation = true;
+        rb.angularDamping = angularDamping;
+        rb.interpolation = RigidbodyInterpolation.Interpolate;
+        rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+
+        if (ragdollHips != null)
+        {
+            ragdollHips.angularDamping = angularDamping;
+            ragdollHips.interpolation = RigidbodyInterpolation.Interpolate;
+            ragdollHips.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+            ragdollHips.maxAngularVelocity = maxAngularVelocity;
+        }
 
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
 
+        canMove = false;
+        canLook = false;
+
+        if (firstPersonCine != null)
+            firstPersonCine.SetActive(true);
+
+        if (thirdPersonCine != null)
+            thirdPersonCine.SetActive(false);
+
         if (interactPrompt != null)
-        {
             interactPrompt.SetActive(false);
-        }
+
+        if (reticleImage != null)
+            reticleImage.color = normalReticleColor;
+
+        StartCoroutine(EnableLookAfterIntro());
+    }
+
+    private IEnumerator EnableLookAfterIntro()
+    {
+        yield return new WaitForSeconds(introLookDelay);
+        canLook = true;
     }
 
     void Update()
     {
-        CameraLook();
+        if (canLook)
+            CameraLook();
+
         GroundCheck();
         CheckForInteractable();
+        UpdateWalkAnimation();
     }
 
     void FixedUpdate()
     {
+        if (canMove)
+        {
+            MovePlayer();
+        }
+        else
+        {
+            rb.linearVelocity = new Vector3(0f, rb.linearVelocity.y, 0f);
+
+            if (ragdollHips != null)
+                ragdollHips.linearVelocity = new Vector3(0f, ragdollHips.linearVelocity.y, 0f);
+        }
+
+        LimitVelocityAndSpin();
+    }
+
+    void MovePlayer()
+    {
+        if (ragdollHips == null) return;
+
         float currentSpeed = isRunning ? runSpeed : walkSpeed;
-
         Vector2 finalMoveInput = moveInput;
-
-        //drunk input
 
         if (DrunkManager.instance != null && DrunkManager.instance.isDrunk && useDrunkInput)
         {
@@ -78,26 +175,72 @@ public class FPSplayer : MonoBehaviour
 
             float wobbleX = Mathf.Sin(Time.time * drunkInputSpeed) * drunkInputAmount * drunkLevel;
             float wobbleY = Mathf.Cos(Time.time * drunkInputSpeed * 1.3f) * drunkInputAmount * drunkLevel;
-            float wobbleZ = Mathf.Abs(Time.time * drunkInputSpeed * 1.2f) * drunkInputAmount * drunkLevel;
-
-            Debug.Log("Camera is wobbling");
 
             finalMoveInput += new Vector2(wobbleX, wobbleY);
-
-
-
             finalMoveInput = Vector2.ClampMagnitude(finalMoveInput, 1.4f);
         }
 
-        Vector3 move = transform.forward * finalMoveInput.y * currentSpeed
-                     + transform.right * finalMoveInput.x * currentSpeed;
+        Vector3 forward = cameraTransform != null ? cameraTransform.forward : transform.forward;
+        Vector3 right = cameraTransform != null ? cameraTransform.right : transform.right;
 
-        rb.linearVelocity = new Vector3(move.x, rb.linearVelocity.y, move.z);
+        forward.y = 0f;
+        right.y = 0f;
+
+        forward.Normalize();
+        right.Normalize();
+
+        Vector3 move = forward * finalMoveInput.y + right * finalMoveInput.x;
+        move = Vector3.ClampMagnitude(move, 1f);
+
+        Vector3 targetVelocity = move * currentSpeed;
+
+        ragdollHips.linearVelocity = new Vector3(
+            targetVelocity.x,
+            ragdollHips.linearVelocity.y,
+            targetVelocity.z
+        );
+
+        if (isGrounded && !jumpReady)
+            ragdollHips.AddForce(Vector3.down * groundedStickForce, ForceMode.Acceleration);
 
         if (jumpReady && isGrounded)
         {
             jumpReady = false;
-            rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
+
+            ragdollHips.linearVelocity = new Vector3(
+                ragdollHips.linearVelocity.x,
+                0f,
+                ragdollHips.linearVelocity.z
+            );
+
+            ragdollHips.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
+        }
+    }
+
+    void LimitVelocityAndSpin()
+    {
+        if (ragdollHips == null) return;
+
+        Vector3 velocity = ragdollHips.linearVelocity;
+        Vector3 horizontalVelocity = new Vector3(velocity.x, 0f, velocity.z);
+
+        if (horizontalVelocity.magnitude > maxHorizontalSpeed)
+            horizontalVelocity = horizontalVelocity.normalized * maxHorizontalSpeed;
+
+        float clampedY = Mathf.Clamp(velocity.y, -maxVerticalSpeed, maxVerticalSpeed);
+
+        ragdollHips.linearVelocity = new Vector3(
+            horizontalVelocity.x,
+            clampedY,
+            horizontalVelocity.z
+        );
+
+        if (allowTipping)
+        {
+            ragdollHips.angularVelocity = Vector3.ClampMagnitude(
+                ragdollHips.angularVelocity,
+                maxAngularVelocity
+            );
         }
     }
 
@@ -105,9 +248,8 @@ public class FPSplayer : MonoBehaviour
     {
         if (cameraTransform == null) return;
 
-       
         float mouseY = lookInput.y * lookSensitivity * Time.deltaTime;
-        float mouseX = lookInput.x * lookSensitivity * Time.deltaTime; 
+        float mouseX = lookInput.x * lookSensitivity * Time.deltaTime;
 
         yaw += mouseX;
         transform.rotation = Quaternion.Euler(0f, yaw, 0f);
@@ -115,23 +257,74 @@ public class FPSplayer : MonoBehaviour
         pitch -= mouseY;
         pitch = Mathf.Clamp(pitch, -90f, 90f);
 
-
-
-
-
         cameraTransform.localRotation = Quaternion.Euler(pitch, 0f, 0f);
+    }
+
+    void UpdateWalkAnimation()
+    {
+        if (characterAnimator == null) return;
+
+        // canMove랑 상관없이 WASD / Move Input 들어오면 바로 Walking
+        bool hasMoveInput = moveInput.magnitude > 0.1f;
+
+        characterAnimator.SetBool(walkingBoolName, hasMoveInput);
+    }
+
+    public void StartDrinkStandSequence()
+    {
+        if (hasStartedDrinkSequence)
+            return;
+
+        hasStartedDrinkSequence = true;
+
+        if (DrunkManager.instance != null)
+            DrunkManager.instance.Drink();
+
+        StartCoroutine(DrinkSequence());
+    }
+
+    private IEnumerator DrinkSequence()
+    {
+        canMove = false;
+        canLook = true;
+
+        rb.linearVelocity = Vector3.zero;
+        rb.angularVelocity = Vector3.zero;
+
+        if (ragdollHips != null)
+        {
+            ragdollHips.linearVelocity = Vector3.zero;
+            ragdollHips.angularVelocity = Vector3.zero;
+        }
+
+        yield return new WaitForSeconds(delayBeforeCameraSwitch);
+
+        if (firstPersonCine != null)
+            firstPersonCine.SetActive(false);
+
+        if (thirdPersonCine != null)
+            thirdPersonCine.SetActive(true);
+
+        yield return new WaitForSeconds(delayBeforeMovementUnlock);
+
+        canMove = true;
+        canLook = true;
     }
 
     void CheckForInteractable()
     {
-        if (cameraTransform == null) return;
+        Camera cam = Camera.main;
 
-        Ray ray = new Ray(cameraTransform.position, cameraTransform.forward);
-        RaycastHit hit;
+        if (cam == null)
+        {
+            Debug.LogWarning("MainCamera Tag가 MainCamera인지 확인해.");
+            return;
+        }
 
-        Debug.DrawRay(cameraTransform.position, cameraTransform.forward * interactDistance, Color.green);
+        Ray ray = cam.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
+        Debug.DrawRay(ray.origin, ray.direction * interactDistance, Color.red, 0.1f);
 
-        if (Physics.Raycast(ray, out hit, interactDistance))
+        if (Physics.Raycast(ray, out RaycastHit hit, interactDistance))
         {
             InteractableObject interactable = hit.collider.GetComponentInParent<InteractableObject>();
 
@@ -153,34 +346,25 @@ public class FPSplayer : MonoBehaviour
         ClearCurrentInteractable();
     }
 
-  
-
     void ShowPrompt(InteractableObject interactable)
     {
         if (interactPrompt != null)
-        {
             interactPrompt.SetActive(true);
-        }
 
         if (promptText != null)
-        {
-            if (interactable.isDrink)
-            {
-                promptText.text = "Press F to drink me!";
-            }
-            else
-            {
-                promptText.text = "Press F to interact";
-            }
-        }
+            promptText.text = interactable.isDrink ? "Press F to drink me!" : "Press F to interact";
+
+        if (reticleImage != null)
+            reticleImage.color = interactReticleColor;
     }
 
     void HidePrompt()
     {
         if (interactPrompt != null)
-        {
             interactPrompt.SetActive(false);
-        }
+
+        if (reticleImage != null)
+            reticleImage.color = normalReticleColor;
     }
 
     void ClearCurrentInteractable()
@@ -205,9 +389,7 @@ public class FPSplayer : MonoBehaviour
     public void OnJump(InputAction.CallbackContext context)
     {
         if (context.performed)
-        {
             jumpReady = true;
-        }
     }
 
     public void OnSprint(InputAction.CallbackContext context)
@@ -220,9 +402,9 @@ public class FPSplayer : MonoBehaviour
         if (!context.performed) return;
 
         if (currentInteractable != null)
-        {
             currentInteractable.Interact();
-        }
+        else
+            Debug.Log("No current interactable");
     }
 
     void GroundCheck()
@@ -251,18 +433,6 @@ public class FPSplayer : MonoBehaviour
             Vector3 end = groundCheck.position + Vector3.down * groundCheckDistance;
             Gizmos.color = Color.yellow;
             Gizmos.DrawWireSphere(end, groundCheckRadius);
-        }
-
-        if (cameraTransform != null)
-        {
-            Gizmos.color = Color.green;
-            Gizmos.DrawLine(cameraTransform.position, cameraTransform.position + cameraTransform.forward * interactDistance);
-
-
-
-
-
-
         }
     }
 }

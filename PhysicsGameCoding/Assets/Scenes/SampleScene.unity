@@ -943,7 +943,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  - {fileID: 2100000, guid: 9452ae1262a74094f8a68013fbcd1834, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -1386,10 +1386,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: af8019ec87a53204a850124bab5c755b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
-  isDrunk: 0
+  currentState: 0
   drunkLevel: 0
-  maxDrunkLevel: 5
-  increaseRate: 0.2
 --- !u!4 &427467891
 Transform:
   m_ObjectHideFlags: 0
@@ -1664,7 +1662,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  - {fileID: 2100000, guid: 9452ae1262a74094f8a68013fbcd1834, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -1777,6 +1775,12 @@ MonoBehaviour:
   walkSpeed: 5
   runSpeed: 9
   jumpForce: 5
+  groundedStickForce: 20
+  maxHorizontalSpeed: 10
+  maxVerticalSpeed: 12
+  allowTipping: 1
+  angularDamping: 8
+  maxAngularVelocity: 3
   useDrunkInput: 1
   drunkInputAmount: 0.35
   drunkInputSpeed: 2
@@ -1840,7 +1844,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  - {fileID: 2100000, guid: 9452ae1262a74094f8a68013fbcd1834, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0

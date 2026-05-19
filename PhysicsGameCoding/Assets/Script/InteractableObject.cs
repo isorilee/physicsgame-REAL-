@@ -1,98 +1,84 @@
 ﻿using UnityEngine;
-using System.Collections;
 
 public class InteractableObject : MonoBehaviour
 {
-    [Header("Highlight")]
-    public Color highlightColor = Color.yellow;
-    [Range(0f, 1f)] public float highlightStrength = 0.5f;
-
     [Header("Interaction Type")]
     public bool isDrink = false;
 
-    [Header("Drink Settings")]
-    public float drinkDelay = 0.75f;
-    public GameObject objectToHideAfterUse;
+    [Header("Object Settings")]
+    public bool disappearAfterDrink = true;
 
-    private Renderer objectRenderer;
-    private Color originalColor;
+    [Header("Highlight")]
+    public Renderer[] renderersToHighlight;
+    public Color highlightColor = Color.yellow;
+
+    private Color[] originalColors;
     private bool isHighlighted = false;
-    private bool hasBeenUsed = false;
 
-    void Awake()
+    private void Start()
     {
-        objectRenderer = GetComponentInChildren<Renderer>();
+        originalColors = new Color[renderersToHighlight.Length];
 
-        if (objectRenderer != null)
+        for (int i = 0; i < renderersToHighlight.Length; i++)
         {
-            originalColor = objectRenderer.material.color;
+            if (renderersToHighlight[i] != null)
+            {
+                originalColors[i] = renderersToHighlight[i].material.color;
+            }
+        }
+    }
+
+    public void Interact()
+    {
+        Debug.Log("INTERACTED WITH: " + gameObject.name);
+
+        if (isDrink)
+        {
+            FPSplayer player = FindFirstObjectByType<FPSplayer>();
+
+            if (player != null)
+            {
+                player.StartDrinkStandSequence();
+            }
+
+            if (disappearAfterDrink)
+            {
+                gameObject.SetActive(false);
+            }
         }
         else
         {
-            Debug.LogWarning(gameObject.name + " has no renderer for highlight.");
+            Debug.Log("Interacted with non-drink object: " + gameObject.name);
         }
     }
 
     public void Highlight()
     {
-        if (isHighlighted || objectRenderer == null) return;
+        if (isHighlighted) return;
 
-        objectRenderer.material.color = Color.Lerp(originalColor, highlightColor, highlightStrength);
         isHighlighted = true;
+
+        for (int i = 0; i < renderersToHighlight.Length; i++)
+        {
+            if (renderersToHighlight[i] != null)
+            {
+                renderersToHighlight[i].material.color = highlightColor;
+            }
+        }
     }
 
     public void Unhighlight()
     {
-        if (!isHighlighted || objectRenderer == null) return;
+        if (!isHighlighted) return;
 
-        objectRenderer.material.color = originalColor;
         isHighlighted = false;
-    }
 
-    public void Interact()
-    {
-        Debug.Log("Interact called on: " + gameObject.name);
-
-        if (hasBeenUsed) return;
-
-        if (isDrink)
+        for (int i = 0; i < renderersToHighlight.Length; i++)
         {
-            //StartCoroutine(DrinkSequence());
-        }
-        else
-        {
-            Debug.Log("Interacted with " + gameObject.name + ", but it is not marked as a drink.");
-        }
-    }
-
-    private IEnumerator DrinkSequence()
-    {
-        hasBeenUsed = true;
-
-        Debug.Log("Drinking...");
-
-        yield return new WaitForSeconds(drinkDelay);
-
-        if (DrunkManager.instance != null)
-        {
-            //DrunkManager.instance.StartDrunkMode();
-            Debug.Log("Player is now drunk.");
-        }
-        else
-        {
-            Debug.LogError("No DrunkManager found in scene.");
-        }
-
-        Unhighlight();
-
-        if (objectToHideAfterUse != null)
-        {
-            objectToHideAfterUse.SetActive(false);
-        }
-        else
-        {
-            gameObject.SetActive(false);
+            if (renderersToHighlight[i] != null)
+            {
+                renderersToHighlight[i].material.color = originalColors[i];
+            }
         }
     }
 }
-

@@ -1,9 +1,7 @@
-using System.Collections;
 using UnityEngine;
 
 public class DrunkManager : MonoBehaviour
 {
-    
     public static DrunkManager instance;
 
     public enum DrunkState
@@ -13,71 +11,81 @@ public class DrunkManager : MonoBehaviour
         Drunk,
         Wasted
     }
-    
-    [Header("Drunk State")]
-    public DrunkState currentState = DrunkState.Sober;
 
-    //0=sober,1=verydrunk
+    [Header("Drunk Level")]
     [Range(0f, 1f)]
     public float drunkLevel = 0f;
 
-    public bool isDrunk => currentState != DrunkState.Sober;
+    [Header("Drunk State")]
+    public DrunkState currentState = DrunkState.Sober;
 
-     void Awake()
+    public bool isDrunk = false;
+
+    private void Awake()
     {
-        if(instance == null)
+        if (instance != null && instance != this)
         {
-            instance = this;
+            Destroy(gameObject);
+            return;
         }
 
-        else
-        {
-            //prevent duplicate DrunkManagers in the scene 
-            Destroy(gameObject);
-        }
+        instance = this;
     }
 
-    public void SetDrunkState(DrunkState state)
+    private void Start()
     {
-        currentState = state;
+        SetDrunk(drunkLevel);
+    }
 
-        switch(state)
+    public void Drink()
+    {
+        SetDrunk(drunkLevel + 0.35f);
+    }
+
+    public void SetDrunk(float newLevel)
+    {
+        drunkLevel = Mathf.Clamp01(newLevel);
+        isDrunk = drunkLevel > 0f;
+        UpdateDrunkState();
+    }
+
+    public void SetDrunkState(DrunkState newState)
+    {
+        currentState = newState;
+
+        switch (newState)
         {
             case DrunkState.Sober:
                 drunkLevel = 0f;
                 break;
-
             case DrunkState.Tipsy:
-                drunkLevel = 0.3f;
+                drunkLevel = 0.25f;
                 break;
-
             case DrunkState.Drunk:
                 drunkLevel = 0.6f;
                 break;
-
             case DrunkState.Wasted:
-                drunkLevel = 0.9f;
-                break; 
-
+                drunkLevel = 1f;
+                break;
         }
 
-        Debug.Log("Drunk State: " + currentState);
+        isDrunk = drunkLevel > 0f;
     }
-        
-       
 
+    public void SetState(DrunkState newState)
+    {
+        SetDrunkState(newState);
+    }
 
+    private void UpdateDrunkState()
+    {
+        if (drunkLevel <= 0f)
+            currentState = DrunkState.Sober;
+        else if (drunkLevel < 0.35f)
+            currentState = DrunkState.Tipsy;
+        else if (drunkLevel < 0.75f)
+            currentState = DrunkState.Drunk;
+        else
+            currentState = DrunkState.Wasted;
+    }
 }
-    //public void SetDrunk(float level)
-    //{
-    //    isDrunk = true;
-    //    drunkLevel = Mathf.Clamp01(level);
-    //}
-
-    //public void SetSober()
-    //{
-    //    isDrunk = false;
-    //    drunkLevel = 0f;
-
-    //}
-
