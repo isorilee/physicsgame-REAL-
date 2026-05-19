@@ -2,32 +2,71 @@ using UnityEngine;
 
 public class DrunkCameraSway : MonoBehaviour
 {
-    public float swayAmount = 2f;
-    public float swaySpeed = 1.5f;
-    public float bobAmount = 0.05f;
+    public enum DrunkState
+    {
+        Sober,
+        Tipsy,
+        Drunk,
+        Wasted
+    }
 
-    private Vector3 startLocalPos;
+    [Header("Drunk State")]
+    public DrunkState currentState = DrunkState.Sober;
+
+    [Header("Sway Amount")]
+    public float soberAmount = 0f;
+    public float tipsyAmount = 0.03f;
+    public float drunkAmount = 0.08f;
+    public float wastedAmount = 0.15f;
+
+    [Header("Sway Speed")]
+    public float soberSpeed = 0f;
+    public float tipsySpeed = 1.5f;
+    public float drunkSpeed = 2.5f;
+    public float wastedSpeed = 4f;
+
+    private Vector3 startLocalPosition;
+    private float currentAmount;
+    private float currentSpeed;
 
     void Start()
     {
-        startLocalPos = transform.localPosition;
+        startLocalPosition = transform.localPosition;
+        ApplyDrunkState(currentState);
     }
 
-    void Update()
+    void LateUpdate()
     {
-        //if (DrunkManager.instance == null || !DrunkManager.instance.isDrunk)
+        float swayX = Mathf.Sin(Time.time * currentSpeed) * currentAmount;
+
+        transform.localPosition = startLocalPosition + new Vector3(swayX, 0f, 0f);
+    }
+
+    public void ApplyDrunkState(DrunkState state)
+    {
+        currentState = state;
+
+        switch (state)
         {
-            transform.localPosition = startLocalPos;
-            return;
+            case DrunkState.Sober:
+                currentAmount = soberAmount;
+                currentSpeed = soberSpeed;
+                break;
+
+            case DrunkState.Tipsy:
+                currentAmount = tipsyAmount;
+                currentSpeed = tipsySpeed;
+                break;
+
+            case DrunkState.Drunk:
+                currentAmount = drunkAmount;
+                currentSpeed = drunkSpeed;
+                break;
+
+            case DrunkState.Wasted:
+                currentAmount = wastedAmount;
+                currentSpeed = wastedSpeed;
+                break;
         }
-
-        //float drunkLevel = DrunkManager.instance.drunkLevel;
-
-        //float swayX = Mathf.Sin(Time.time * swaySpeed) * swayAmount * drunkLevel;
-        //float swayY = Mathf.Cos(Time.time * swaySpeed * 1.3f) * swayAmount * 0.5f * drunkLevel;
-        //float bobY = Mathf.Sin(Time.time * swaySpeed * 2f) * bobAmount * drunkLevel;
-
-        //transform.localRotation = Quaternion.Euler(swayY, 0f, swayX);
-        //transform.localPosition = startLocalPos + new Vector3(0f, bobY, 0f);
     }
 }
